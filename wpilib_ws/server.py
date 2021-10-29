@@ -1,9 +1,29 @@
 import logging
 import asyncio
+from dataclasses import dataclass
 
 from aiohttp import web
 
 from wpilib_ws import utils
+from wpilib_ws.hardware import DeviceType, CANDeviceType
+
+
+@dataclass
+class WebSocketMessageEvent:
+
+    type: str
+    device: str
+    data: dict
+
+    @classmethod
+    def from_dict(cls, message: dict):
+        device_type = message["type"]
+        if device_type.startswith("CAN"):
+            _type = CANDeviceType(device_type)
+        else:
+            _type = DeviceType(device_type)
+
+        return cls(_type, message["device"], message["data"])
 
 
 class WPILibWsServer:
@@ -30,7 +50,7 @@ class WPILibWsServer:
         self._debug = debug
         if self._debug:
             self._log.setLevel(logging.DEBUG)
-    
+
     def verify_data(self, data: dict):
         """
         Verify that the recieved message is valid.
@@ -46,9 +66,11 @@ class WPILibWsServer:
             return False
         else:
             return all(
-                isinstance(data.get("type"), str),
-                isinstance(data.get("device"), str),
-                isinstance(data.get("data"), dict),
+                (
+                    isinstance(data.get("type"), str),
+                    isinstance(data.get("device"), str),
+                    isinstance(data.get("data"), dict),
+                )
             )
 
     async def _ws_handler(self, request):
@@ -67,17 +89,22 @@ class WPILibWsServer:
         try:
             while True:
                 data = await ws.receive_json(timeout=2)
-                
-                if not self.verify_data():
+
+                if not self.verify_data(data):
                     self._log.debug(f"Ignoring Invalid Data: {data}")
                 else:
                     self._log.debug(f">Incoming WS MSG: {data}")
+                    event = WebSocketMessageEvent.from_dict(data)
+                    await self._handle_event(event)
 
         except asyncio.TimeoutError:
             self._log.info("Timed out")
 
         self._connected = False
         self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
+
+    async def _handle_event(self, event):
+        pass
 
     async def build_app(self):
         app = web.Application(logger=self._log)
