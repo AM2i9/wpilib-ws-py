@@ -9,7 +9,7 @@ from wpilib_ws.hardware import DeviceType, CANDeviceType
 
 
 @dataclass
-class WebSocketMessageEvent:
+class MessageEvent:
 
     type: str
     device: str
@@ -94,7 +94,7 @@ class WPILibWsServer:
                     self._log.debug(f"Ignoring Invalid Data: {data}")
                 else:
                     self._log.debug(f">Incoming WS MSG: {data}")
-                    event = WebSocketMessageEvent.from_dict(data)
+                    event = MessageEvent.from_dict(data)
                     await self._handle_event(event)
 
         except asyncio.TimeoutError:
