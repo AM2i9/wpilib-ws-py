@@ -30,6 +30,26 @@ class WPILibWsServer:
         self._debug = debug
         if self._debug:
             self._log.setLevel(logging.DEBUG)
+    
+    def verify_data(self, data: dict):
+        """
+        Verify that the recieved message is valid.
+
+        As per the WPILib protocol, the server will ignore messages that:
+        - Are not a dict
+        - Have no 'type' key, 'device' key, or 'data' key
+        - Have a 'type' or 'device' key that is not a string
+        - Have a 'data' value that is not a dict
+        - Have a 'type' value that the client or server does not recognize
+        """
+        if not isinstance(data, dict):
+            return False
+        else:
+            return all(
+                isinstance(data.get("type"), str),
+                isinstance(data.get("device"), str),
+                isinstance(data.get("data"), dict),
+            )
 
     async def _ws_handler(self, request):
 
@@ -47,7 +67,12 @@ class WPILibWsServer:
         try:
             while True:
                 data = await ws.receive_json(timeout=2)
-                self._log.debug(f">Incoming WS MSG: {data}")
+                
+                if not self.verify_data():
+                    self._log.debug(f"Ignoring Invalid Data: {data}")
+                else:
+                    self._log.debug(f">Incoming WS MSG: {data}")
+
         except asyncio.TimeoutError:
             self._log.info("Timed out")
 
