@@ -9,7 +9,6 @@ from wpilib_ws.hardware import DeviceType, CANDeviceType
 
 
 class InvalidDeviceError(Exception):
-    
     def __init__(self, device: str):
         self.device = device
         self.message = f"Device type '{device}' does not exists or cannot be handled."
@@ -97,7 +96,6 @@ class WPILibWsServer:
             self._log.info("Client connected")
             self._connected = True
 
-        
         while True:
             try:
                 data = await ws.receive_json(timeout=2)
@@ -114,7 +112,6 @@ class WPILibWsServer:
             except InvalidDeviceError as e:
                 self._log.error(e)
 
-                
         self._connected = False
         self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
 

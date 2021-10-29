@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class DeviceType(Enum):
     Accelerometer = "Accel"
     AddressableLED = "AddressableLED"
