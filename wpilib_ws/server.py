@@ -95,7 +95,7 @@ class WPILibWsServer:
                 else:
                     self._log.debug(f">Incoming WS MSG: {data}")
                     event = MessageEvent.from_dict(data)
-                    await self._handle_event(event)
+                    await self.on_message(event)
 
         except asyncio.TimeoutError:
             self._log.info("Timed out")
@@ -103,7 +103,7 @@ class WPILibWsServer:
         self._connected = False
         self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
 
-    async def _handle_event(self, event):
+    async def on_message(self, event):
         pass
 
     async def build_app(self):
