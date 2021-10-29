@@ -8,6 +8,14 @@ from wpilib_ws import utils
 from wpilib_ws.hardware import DeviceType, CANDeviceType
 
 
+class InvalidDeviceError(Exception):
+    
+    def __init__(self, device: str):
+        self.device = device
+        self.message = f"Device type '{device}' does not exists or cannot be handled."
+        super().__init__(self.message)
+
+
 @dataclass
 class MessageEvent:
 
@@ -18,12 +26,15 @@ class MessageEvent:
     @classmethod
     def from_dict(cls, message: dict):
         device_type = message["type"]
-        if device_type.startswith("CAN"):
-            _type = CANDeviceType(device_type)
-        else:
-            _type = DeviceType(device_type)
+        try:
+            if device_type.startswith("CAN"):
+                _type = CANDeviceType(device_type)
+            else:
+                _type = DeviceType(device_type)
 
-        return cls(_type, message["device"], message["data"])
+            return cls(_type, message["device"], message["data"])
+        except ValueError:
+            raise InvalidDeviceError(device_type)
 
 
 class WPILibWsServer:
@@ -86,8 +97,9 @@ class WPILibWsServer:
             self._log.info("Client connected")
             self._connected = True
 
-        try:
-            while True:
+        
+        while True:
+            try:
                 data = await ws.receive_json(timeout=2)
 
                 if not self.verify_data(data):
@@ -96,10 +108,13 @@ class WPILibWsServer:
                     self._log.debug(f">Incoming WS MSG: {data}")
                     event = MessageEvent.from_dict(data)
                     await self.on_message(event)
+            except asyncio.TimeoutError:
+                self._log.info("Timed out")
+                break
+            except InvalidDeviceError as e:
+                self._log.error(e)
 
-        except asyncio.TimeoutError:
-            self._log.info("Timed out")
-
+                
         self._connected = False
         self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
 
