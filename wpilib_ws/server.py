@@ -158,11 +158,8 @@ class WPILibWsServer:
         Handle incoming messages, and call the appropriate handlers.
         """
 
-        for func in self._handlers["message"]:
-            await func(event)
-
         for item in self._handlers.items():
-            if item[0] != "message" and item[0] == event.type.value:
+            if item[0] == event.type.value or "message":
                 for func in item[1]:
                     await func(event)
 
