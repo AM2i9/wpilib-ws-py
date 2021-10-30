@@ -44,15 +44,11 @@ class MessageEvent:
 class WPILibWsServer:
     def __init__(
         self,
-        address="0.0.0.0",
-        port=3300,
         uri="/wpilibws",
         loop=None,
         logger=None,
         debug=False,
     ):
-        self._address = address
-        self._port = port
         self._uri = uri
         self._connected = False
         self._loop = loop
