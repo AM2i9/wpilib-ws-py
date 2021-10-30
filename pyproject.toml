@@ -2,10 +2,12 @@
 name = "wpilib-ws-py"
 version = "0.1.0"
 description = "An implementation of the WPILib WebSocket protocol for Python"
+readme = "README.md"
 authors = ["Patrick Brennan (AM2i9)"]
 repository = "https://github.com/AM2i9/wpilib-ws-py"
 keywords = ["wpilib", "websocket"]
 license = "MIT"
+include = ["LICENSE.md"]
 packages = [
     {include = "wpilib_ws"}
 ]
