@@ -87,6 +87,10 @@ class WPILibWsServer:
                     isinstance(data.get("type"), str),
                     isinstance(data.get("device"), str),
                     isinstance(data.get("data"), dict),
+                    (
+                    DeviceType.device_exists(data.get("type"))
+                    or CANDeviceType.device_exists(data.get("type"))
+                    )
                 )
             )
 
