@@ -124,20 +124,26 @@ class WPILibWsServer:
 
     def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
         """
-        Create a message handler for all or a specific device type coming over
-        the websocket.
+        Decorator for creating a message handler for all or a specific device
+        type coming overthe websocket.
         """
         if isinstance(device_type, (DeviceType, CANDeviceType)):
             device_type = device_type.value
 
         def wrapper(func):
             event_name = device_type or "message"
-            if event_name not in self._handlers:
-                self._handlers[event_name] = []
-            self._handlers[event_name].append(func)
+            self.add_handler(event_name, func)
             return func
 
         return wrapper
+    
+    def add_handler(self, event, func):
+        """
+        Add a handler for a websocket message event.
+        """
+        if event not in self._handlers:
+            self._handlers[event] = []
+        self._handlers[event].append(func)
 
     async def _handle_message(self, event: MessageEvent):
         """
