@@ -7,7 +7,6 @@ from aiohttp import web
 
 from wpilib_ws import utils
 from wpilib_ws.hardware import DeviceType, CANDeviceType
-from wpilib_ws.payloads import Payload
 
 
 class InvalidDeviceError(Exception):
@@ -26,9 +25,7 @@ class MessageEvent:
     def __init__(self, type: Union[DeviceType, CANDeviceType], device: str, data: dict):
         self.type = type
         self.device = device
-        self.data = data
-
-        self.payload = Payload(self)
+        self.payload = data
 
     @classmethod
     def from_dict(cls, message: dict):
@@ -125,15 +122,17 @@ class WPILibWsServer:
         self._connected = False
         self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
 
-    def on_message(self, device_type: Union[str, DeviceType, CANDeviceType]=None):
+    def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
         if isinstance(device_type, (DeviceType, CANDeviceType)):
             device_type = device_type.value
+
         def wrapper(func):
             event_name = device_type or "message"
             if event_name not in self._handlers:
                 self._handlers[event_name] = []
             self._handlers[event_name].append(func)
             return func
+
         return wrapper
 
     async def _handle_message(self, event: MessageEvent):
