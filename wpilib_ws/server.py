@@ -1,11 +1,13 @@
 import logging
 import asyncio
 from dataclasses import dataclass
+from typing import Union
 
 from aiohttp import web
 
 from wpilib_ws import utils
 from wpilib_ws.hardware import DeviceType, CANDeviceType
+from wpilib_ws.payloads import Payload
 
 
 class InvalidDeviceError(Exception):
@@ -15,12 +17,18 @@ class InvalidDeviceError(Exception):
         super().__init__(self.message)
 
 
-@dataclass
 class MessageEvent:
 
     type: str
     device: str
     data: dict
+
+    def __init__(self, type: Union[DeviceType, CANDeviceType], device: str, data: dict):
+        self.type = type
+        self.device = device
+        self.data = data
+
+        self.payload = Payload(self)
 
     @classmethod
     def from_dict(cls, message: dict):
@@ -60,6 +68,8 @@ class WPILibWsServer:
         self._debug = debug
         if self._debug:
             self._log.setLevel(logging.DEBUG)
+
+        self._handlers = {}
 
     def verify_data(self, data: dict):
         """
@@ -105,7 +115,7 @@ class WPILibWsServer:
                 else:
                     self._log.debug(f">Incoming WS MSG: {data}")
                     event = MessageEvent.from_dict(data)
-                    await self.on_message(event)
+                    await self._handle_message(event)
             except asyncio.TimeoutError:
                 self._log.info("Timed out")
                 break
@@ -115,8 +125,26 @@ class WPILibWsServer:
         self._connected = False
         self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
 
-    async def on_message(self, event):
-        pass
+    def on_message(self, device_type: Union[str, DeviceType, CANDeviceType]=None):
+        if isinstance(device_type, (DeviceType, CANDeviceType)):
+            device_type = device_type.value
+        def wrapper(func):
+            event_name = device_type or "message"
+            if event_name not in self._handlers:
+                self._handlers[event_name] = []
+            self._handlers[event_name].append(func)
+            return func
+        return wrapper
+
+    async def _handle_message(self, event: MessageEvent):
+
+        for func in self._handlers["message"]:
+            await func(event)
+
+        for item in self._handlers.items():
+            if item[0] != "message" and item[0] == event.type.value:
+                for func in item[1]:
+                    await func(event)
 
     async def build_app(self):
         app = web.Application(logger=self._log)
