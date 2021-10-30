@@ -1,6 +1,5 @@
 import logging
 import asyncio
-from dataclasses import dataclass
 from typing import Union
 
 from aiohttp import web
