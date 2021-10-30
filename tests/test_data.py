@@ -2,8 +2,8 @@ import unittest
 
 from wpilib_ws import WPILibWsServer
 
-class TestData(unittest.TestCase):
 
+class TestData(unittest.TestCase):
     def setUp(self):
         self.server = WPILibWsServer()
 
@@ -18,7 +18,7 @@ class TestData(unittest.TestCase):
         """
 
         cases = [
-            ({},False),
+            ({}, False),
             ({"type": "SimDevice", "device": "bar", "data": {"foo": "bar"}}, True),
             ({"type": 1, "device": "bar", "data": {"foo": "bar"}}, False),
             ({"type": "SimDevice", "data": {"foo": "bar"}}, False),
@@ -28,4 +28,6 @@ class TestData(unittest.TestCase):
         ]
 
         for case, expected in cases:
-            self.assertEqual(self.server.verify_data(case), expected, f"Failed on case: {case}")
+            self.assertEqual(
+                self.server.verify_data(case), expected, f"Failed on case: {case}"
+            )

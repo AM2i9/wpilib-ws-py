@@ -46,6 +46,7 @@ class WPILibWsServer:
     data and other information about the API can be found
     [here](https://github.com/wpilibsuite/allwpilib/blob/main/simulation/halsim_ws_core/doc/hardware_ws_api.md).
     """
+
     def __init__(
         self,
         uri="/wpilibws",
@@ -88,9 +89,9 @@ class WPILibWsServer:
                     isinstance(data.get("device"), str),
                     isinstance(data.get("data"), dict),
                     (
-                    DeviceType.device_exists(data.get("type"))
-                    or CANDeviceType.device_exists(data.get("type"))
-                    )
+                        DeviceType.device_exists(data.get("type"))
+                        or CANDeviceType.device_exists(data.get("type"))
+                    ),
                 )
             )
 
@@ -144,7 +145,7 @@ class WPILibWsServer:
             return func
 
         return wrapper
-    
+
     def add_handler(self, event, func):
         """
         Add a handler for a websocket message event.

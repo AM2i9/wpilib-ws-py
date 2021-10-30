@@ -15,11 +15,13 @@ async def pwm_handler(event):
     print(f"Recieved PWM event: {payload}")
     # ...
 
+
 @server.on_message("CANMotor")
 async def can_motor_handler(event):
     payload = event.payload
     print(f"Recieved CANMotor event: {payload}")
     # ...
+
 
 if __name__ == "__main__":
     # This method can be used to run the server when developing, but a
