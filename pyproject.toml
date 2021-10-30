@@ -5,7 +5,7 @@ description = "An implementation of the WPILib WebSocket protocol for Python"
 authors = ["Patrick Brennan (AM2i9)"]
 license = "MIT"
 packages = [
-    { include = "wpilib_ws"}
+    {include = "wpilib_ws"}
 ]
 
 [tool.poetry.dependencies]
