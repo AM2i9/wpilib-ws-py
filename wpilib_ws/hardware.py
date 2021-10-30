@@ -20,6 +20,10 @@ class DeviceType(Enum):
     SimDevice = "SimDevice"
     RoboRIO = "RoboRIO"
 
+    @classmethod
+    def device_exists(cls, device_type):
+        return device_type in cls._value2member_map_
+
 
 class CANDeviceType(Enum):
     Motor = "CANMotor"
@@ -29,3 +33,7 @@ class CANDeviceType(Enum):
     AnalogInput = "CANAIn"
     DigitalIO = "CANDIO"
     DutyCycle = "CANDutyCycle"
+
+    @classmethod
+    def device_exists(cls, device_type):
+        return device_type in cls._value2member_map_
