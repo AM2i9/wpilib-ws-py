@@ -42,6 +42,11 @@ class MessageEvent:
 
 
 class WPILibWsServer:
+    """
+    An implementation of the WPILib WebSocket server. Specifications on payload
+    data and other information about the API can be found
+    [here](https://github.com/wpilibsuite/allwpilib/blob/main/simulation/halsim_ws_core/doc/hardware_ws_api.md).
+    """
     def __init__(
         self,
         uri="/wpilibws",
