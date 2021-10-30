@@ -8,6 +8,14 @@ class TestData(unittest.TestCase):
         self.server = WPILibWsServer()
 
     def test_verify_data(self):
+        """
+        As per the WPILib protocol, the server should ignore messages that:
+        - Are not a dict
+        - Have no 'type' key, 'device' key, or 'data' key
+        - Have a 'type' or 'device' key that is not a string
+        - Have a 'data' value that is not a dict
+        - Have a 'type' value that the client or server does not recognize
+        """
 
         cases = [
             ({},False),
