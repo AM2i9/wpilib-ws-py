@@ -1,7 +1,11 @@
-# Device message payloads
+from typing import List, Optional
 
+class Payload:
+    def __init__(self, payload):
+        self._payload = payload
+        
 
-class AccelerometerPayload:
+class AccelerometerPayload(Payload):
     init: Optional[bool]
     range: Optional[float]
     x: Optional[float]
@@ -9,32 +13,32 @@ class AccelerometerPayload:
     z: Optional[float]
 
 
-class AddressableLEDPayload:
+class AddressableLEDPayload(Payload):
     init: Optional[bool]
 
 
-class AnalogInputPayload:
+class AnalogInputPayload(Payload):
     init: Optional[bool]
     volatge: Optional[float]
 
 
-class AnalogOutputPayload:
+class AnalogOutputPayload(Payload):
     init: Optional[bool]
 
 
-class DigitalIOPayload:
-    init: Optional[bool]
-    duty_cycle: Optional[float]
-    dio_pin: Optional[int]
-
-
-class DutyCycleOutPayload:
+class DigitalIOPayload(Payload):
     init: Optional[bool]
     duty_cycle: Optional[float]
     dio_pin: Optional[int]
 
 
-class DriverStationPayload:
+class DutyCycleOutPayload(Payload):
+    init: Optional[bool]
+    duty_cycle: Optional[float]
+    dio_pin: Optional[int]
+
+
+class DriverStationPayload(Payload):
     new_data: Optional[bool]
     enabled: Optional[bool]
     autonomous: Optional[bool]
@@ -47,13 +51,13 @@ class DriverStationPayload:
     game_data: Optional[str]
 
 
-class DutyCycleInputPayload:
+class DutyCycleInputPayload(Payload):
     init: Optional[bool]
     connected: Optional[bool]
     position: Optional[float]
 
 
-class EncoderPayload:
+class EncoderPayload(Payload):
     init: Optional[bool]
     channel_a: Optional[int]
     channel_b: Optional[int]
@@ -62,7 +66,7 @@ class EncoderPayload:
     period: Optional[float]
 
 
-class GyroPayload:
+class GyroPayload(Payload):
     init: Optional[bool]
     range: Optional[float]
     connected: Optional[bool]
@@ -74,7 +78,7 @@ class GyroPayload:
     rate_z: Optional[float]
 
 
-class JoystickPayload:
+class JoystickPayload(Payload):
     axes: Optional[List[float]]
     povs: Optional[List[int]]
     buttons: Optional[List[bool]]
@@ -82,31 +86,31 @@ class JoystickPayload:
     rumble_right: Optional[float]
 
 
-class PCMPayload:
+class PCMPayload(Payload):
     pass
 
 
-class PWMPayload:
+class PWMPayload(Payload):
     init: Optional[bool]
     speed: Optional[float]
     position: Optional[float]
 
 
-class RelayPayload:
+class RelayPayload(Payload):
     init_fwd: Optional[bool]
     init_rev: Optional[bool]
     fwd: Optional[bool]
     rev: Optional[bool]
 
 
-class SolenoidPayload:
+class SolenoidPayload(Payload):
     init = Optional[bool]
     output = Optional[bool]
 
 
-class SimDevicePayload:
+class SimDevicePayload(Payload):
     pass
 
 
-class RoboRIOPayload:
+class RoboRIOPayload(Payload):
     pass
