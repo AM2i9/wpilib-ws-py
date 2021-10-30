@@ -87,6 +87,10 @@ class WPILibWsServer:
             )
 
     async def _ws_handler(self, request):
+        """
+        Base handler for websocket connections. Only one connection is allowed
+        at a time to prevent duplicate connections.
+        """
 
         ws = web.WebSocketResponse()
         await ws.prepare(request)
@@ -119,6 +123,10 @@ class WPILibWsServer:
         self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
 
     def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
+        """
+        Create a message handler for all or a specific device type coming over
+        the websocket.
+        """
         if isinstance(device_type, (DeviceType, CANDeviceType)):
             device_type = device_type.value
 
@@ -132,6 +140,9 @@ class WPILibWsServer:
         return wrapper
 
     async def _handle_message(self, event: MessageEvent):
+        """
+        Handle incoming messages, and call the appropriate handlers.
+        """
 
         for func in self._handlers["message"]:
             await func(event)
