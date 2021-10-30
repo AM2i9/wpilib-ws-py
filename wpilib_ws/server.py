@@ -145,8 +145,24 @@ class WPILibWsServer:
                 for func in item[1]:
                     await func(event)
 
-    async def build_app(self):
+    def build_app(self) -> web.Application:
+        """
+        Build a `aiohttp.web.Application`. This can be used to run the server
+        with webserver softwares such as Gunicorn or Uvicorn.
+        `WPILibWsServer.run()` can be used during development to use the
+        aiohttp debug server.
+        """
         app = web.Application(logger=self._log)
         app.add_routes([web.get(self._uri, self._ws_handler)])
 
         return app
+
+    def run(self, address="0.0.0.0", port=3300):
+        """
+        Run the server using the aiohttp debug server.
+        **This is not suggested for production use.** Web servers such as
+        Gunicorn or Uvicorn are suggested for running aiohttp applications in
+        production.
+        """
+        app = self.build_app()
+        web.run_app(app, host=address, port=port)
