@@ -133,6 +133,15 @@ class WPILibWsServer:
         self._connected = False
         self._log.info(f"Socket Closed ({self._ws.close_code}): {self._ws.reason}")
         self._ws = None
+    
+    async def send_payload(self, payload):
+        """
+        Send a JSON payload over the websocket
+        """
+        await self._send_ws_message(payload)
+
+    async def _send_ws_message(self, message):
+        await self._ws.send_json(message)
 
     def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
         """
