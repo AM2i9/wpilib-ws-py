@@ -68,6 +68,7 @@ class WPILibWsServer:
             self._log.setLevel(logging.DEBUG)
 
         self._handlers = {}
+        self._ws = None
 
     def verify_data(self, data: dict):
         """
@@ -109,12 +110,13 @@ class WPILibWsServer:
             self._log.info("Socket already active")
             return
         else:
+            self._ws = ws
             self._log.info("Client connected")
             self._connected = True
 
         while True:
             try:
-                data = await ws.receive_json(timeout=2)
+                data = await self._ws.receive_json(timeout=2)
 
                 if not self.verify_data(data):
                     self._log.debug(f"Ignoring Invalid Data: {data}")
@@ -129,7 +131,8 @@ class WPILibWsServer:
                 self._log.error(e)
 
         self._connected = False
-        self._log.info(f"Socket Closed ({ws.close_code}): {ws.reason}")
+        self._log.info(f"Socket Closed ({self._ws.close_code}): {self._ws.reason}")
+        self._ws = None
 
     def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
         """
