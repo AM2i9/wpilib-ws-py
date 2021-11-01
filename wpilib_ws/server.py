@@ -163,7 +163,7 @@ class WPILibWsServer:
         """
 
         for item in self._handlers.items():
-            if item[0] == event.type.value or "message":
+            if item[0] in (event.type.value, "message"):
                 for func in item[1]:
                     await func(event)
 
