@@ -183,7 +183,11 @@ class WPILibWsServer:
         `WPILibWsServer.run()` can be used during development to use the
         aiohttp debug server.
         """
-        app = web.Application(logger=self._log)
+        if not self._loop:
+            loop = asyncio.get_event_loop()
+        self._loop = loop
+
+        app = web.Application(logger=self._log, loop=loop)
         app.add_routes([web.get(self._uri, self._ws_handler)])
 
         return app
