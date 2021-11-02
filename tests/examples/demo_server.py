@@ -12,7 +12,7 @@ server = WPILibWsServer()
 @server.on_message("PWM")
 async def pwm_handler(event):
     payload = event.payload
-    print(f"Recieved PWM event: {payload}")
+    print(f"Recieved PWM event for channel {event.device}: {payload}")
     # ...
 
 
