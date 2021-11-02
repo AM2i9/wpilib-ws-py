@@ -1,3 +1,4 @@
+from gpiozero.output_devices import PWMLED
 from wpilib_ws import WPILibWsServer
 
 server = WPILibWsServer()
@@ -8,12 +9,21 @@ server = WPILibWsServer()
 # be found here:
 # https://github.com/wpilibsuite/allwpilib/blob/main/simulation/halsim_ws_core/doc/hardware_ws_api.md#hardware-messages
 
+pins = {}
 
 @server.on_message("PWM")
 async def pwm_handler(event):
     payload = event.payload
-    print(f"Recieved PWM event for channel {event.device}: {payload}")
-    # ...
+    pin = int(payload.get("device"))
+
+    if payload.get("<init") is True:
+        pins[pin] = PWMLED(pin)
+    elif payload.get("<init") is False:
+        if pin in pins:
+            del pins[pin]
+    
+    if (payload.get("<raw") is not None) and (pin in pins):
+        pins[pin].value = payload.get("<raw")
 
 
 @server.on_message("CANMotor")

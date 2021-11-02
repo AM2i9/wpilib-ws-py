@@ -154,7 +154,6 @@ class WPILibWsServer:
             if self._ws is not None:
                 await asyncio.gather(*(task() for task in self._background_tasks))
             else:
-                print("background tasks stopped")
                 break
     
     def while_connected(self, buffer=0.05):
