@@ -68,6 +68,7 @@ class WPILibWsServer:
             self._log.setLevel(logging.DEBUG)
 
         self._handlers = {}
+        self._background_tasks = []
         self._ws = None
 
     def verify_data(self, data: dict):
@@ -114,6 +115,8 @@ class WPILibWsServer:
             self._log.info("Client connected")
             self._connected = True
 
+        self._start_background_tasks()
+
         while True:
             try:
                 data = await self._ws.receive_json(timeout=2)
@@ -142,6 +145,31 @@ class WPILibWsServer:
 
     async def _send_ws_message(self, message):
         await self._ws.send_json(message)
+
+    def _start_background_tasks(self):
+        self._background_loop = self._loop.create_task(self._run_while_connected())
+    
+    async def _run_while_connected(self):
+        while True:
+            if self._ws is not None:
+                await asyncio.gather(*(task() for task in self._background_tasks))
+            else:
+                print("background tasks stopped")
+                break
+    
+    def while_connected(self, buffer=0.05):
+        """
+        While robot code is connected, run the given coroutine in the
+        background. This is best for sending payloads to the server for devices
+        such as encoders, gyros, etc.
+        """
+        def wrapper(coro):
+            async def wrapped():
+                await coro()
+                await asyncio.sleep(buffer)
+            self._background_tasks.append(wrapped)
+            return coro
+        return wrapper
 
     def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
         """
