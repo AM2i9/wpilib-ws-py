@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import Union
+from typing import Coroutine, Union
 
 from aiohttp import web
 
@@ -164,10 +164,7 @@ class WPILibWsServer:
         such as encoders, gyros, etc.
         """
         def wrapper(coro):
-            async def wrapped():
-                await coro()
-                await asyncio.sleep(buffer)
-            self._background_tasks.append(wrapped)
+            self.add_coro_background_task(coro, buffer)
             return coro
         return wrapper
 
@@ -193,6 +190,15 @@ class WPILibWsServer:
         if event not in self._handlers:
             self._handlers[event] = []
         self._handlers[event].append(func)
+    
+    def add_coro_background_task(self, coro: Coroutine, buffer: float):
+        """
+        Add a Coroutine to the list of background tasks to run while connected.
+        """
+        async def wrapped():
+            await coro()
+            await asyncio.sleep(buffer)
+        self._background_tasks.append(wrapped)
 
     async def _handle_message(self, event: MessageEvent):
         """
