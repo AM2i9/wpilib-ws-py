@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wpilib-ws-py"
-version = "0.1.3"
+version = "0.2.0"
 description = "An implementation of the WPILib WebSocket protocol for Python"
 readme = "README.md"
 authors = ["Patrick Brennan (AM2i9)"]
@@ -14,7 +14,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-aiohttp = "^3.7.4"
+websockets = "^10.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
