@@ -108,7 +108,7 @@ class WPILibWsServer:
 
         if self._connected:
             await ws.send("HTTP/1.1 409 Conflict\r\n")
-            await ws.lose()
+            await ws.close(reason="Only one connection allowed at a time")
 
         try:
             if path == "/wpilibws" and not self._connected:
