@@ -1,8 +1,8 @@
 import logging
 import asyncio
-from typing import Coroutine, Union
+
 import json
-from typing import Union
+from typing import Coroutine, Union
 
 from websockets import serve
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
