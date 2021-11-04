@@ -224,7 +224,7 @@ class WPILibWsServer:
         Start the WebSocket server
         """
         self._loop = asyncio.get_event_loop()
-        async with serve(self._ws_handler, address, port) as s:
+        async with serve(self._ws_handler, address, port, ping_interval=None) as s:
             print(f"Listening on ws://{address}:{port}")
             await asyncio.Future()
 
