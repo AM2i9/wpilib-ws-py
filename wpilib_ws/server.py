@@ -120,7 +120,7 @@ class WPILibWsServer:
 
                 async for msg in ws:
                     data = json.loads(msg)
-                    
+
                     if not self.verify_data(data):
                         self._log.debug(f"Ignoring invalid data: {data}")
                     else:
@@ -133,7 +133,6 @@ class WPILibWsServer:
             self._connected = False
             self._log.info("Socket Disconnected")
 
-    
     async def send_payload(self, payload):
         """
         Send a JSON payload over the websocket
@@ -148,7 +147,7 @@ class WPILibWsServer:
 
     def _start_background_tasks(self):
         self._loop.create_task(self._run_while_connected())
-    
+
     async def _run_while_connected(self):
         if not self._background_tasks:
             self._log.debug("No background tasks, canceling")
@@ -162,16 +161,18 @@ class WPILibWsServer:
                     break
         except ConnectionClosedOK:
             pass
-    
+
     def while_connected(self, buffer=0.05):
         """
         While robot code is connected, run the given coroutine in the
         background. This is best for sending payloads to the server for devices
         such as encoders, gyros, etc.
         """
+
         def wrapper(coro):
             self.add_coro_background_task(coro, buffer)
             return coro
+
         return wrapper
 
     def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
@@ -196,14 +197,16 @@ class WPILibWsServer:
         if event not in self._handlers:
             self._handlers[event] = []
         self._handlers[event].append(func)
-    
+
     def add_coro_background_task(self, coro: Coroutine, buffer: float):
         """
         Add a Coroutine to the list of background tasks to run while connected.
         """
+
         async def wrapped():
             await coro()
             await asyncio.sleep(buffer)
+
         self._background_tasks.append(wrapped)
 
     async def _handle_message(self, event: MessageEvent):
@@ -215,7 +218,7 @@ class WPILibWsServer:
             if item[0] in (event.type.value, "message"):
                 for func in item[1]:
                     await func(event)
-    
+
     async def async_run(self, address="0.0.0.0", port=3300):
         """
         Start the WebSocket server
