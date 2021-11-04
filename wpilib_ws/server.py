@@ -1,8 +1,11 @@
 import logging
 import asyncio
 from typing import Coroutine, Union
+import json
+from typing import Union
 
-from aiohttp import web
+from websockets import serve
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from wpilib_ws import utils
 from wpilib_ws.hardware import DeviceType, CANDeviceType
@@ -97,65 +100,68 @@ class WPILibWsServer:
                 )
             )
 
-    async def _ws_handler(self, request):
+    async def _ws_handler(self, ws, path):
         """
         Base handler for websocket connections. Only one connection is allowed
         at a time to prevent duplicate connections.
         """
 
-        ws = web.WebSocketResponse()
-        await ws.prepare(request)
-
         if self._connected:
-            await ws.write(b"HTTP/1.1 409 Conflict\r\n")
-            self._log.info("Socket already active")
-            return
-        else:
-            self._ws = ws
-            self._log.info("Client connected")
-            self._connected = True
+            await ws.send("HTTP/1.1 409 Conflict\r\n")
+            await ws.lose()
 
-        self._start_background_tasks()
+        try:
+            if path == "/wpilibws" and not self._connected:
+                self._log.info(f"Client connected: {ws.remote_address}")
 
-        while True:
-            try:
-                data = await self._ws.receive_json(timeout=2)
+                self._connected = True
+                self._ws = ws
+                self._start_background_tasks()
 
-                if not self.verify_data(data):
-                    self._log.debug(f"Ignoring Invalid Data: {data}")
-                else:
-                    self._log.debug(f">Incoming WS MSG: {data}")
-                    event = MessageEvent.from_dict(data)
-                    await self._handle_message(event)
-            except asyncio.TimeoutError:
-                self._log.info("Timed out")
-                break
-            except InvalidDeviceError as e:
-                self._log.error(e)
+                async for msg in ws:
+                    data = json.loads(msg)
+                    
+                    if not self.verify_data(data):
+                        self._log.debug(f"Ignoring invalid data: {data}")
+                    else:
+                        self._log.debug(f"Recieved message data: {data}")
+                        event = MessageEvent.from_dict(data)
+                        await self._handle_message(event)
+        except ConnectionClosedError as e:
+            self._log.info(f"Socket Closed ({e.code}): {e.reason}")
+        finally:
+            self._connected = False
+            self._log.info("Socket Disconnected")
 
-        self._connected = False
-        self._log.info(f"Socket Closed ({self._ws.close_code}): {self._ws.reason}")
-        self._ws = None
     
     async def send_payload(self, payload):
         """
         Send a JSON payload over the websocket
         """
-        await self._send_ws_message(payload)
+        await self._send_ws_message(json.dumps(payload))
 
     async def _send_ws_message(self, message):
-        await self._ws.send_json(message)
+        try:
+            await self._ws.send(message)
+        except ConnectionClosedError:
+            self._log.debug("Could not send message because the socket was closed")
 
     def _start_background_tasks(self):
-        self._background_loop = self._loop.create_task(self._run_while_connected())
+        self._loop.create_task(self._run_while_connected())
     
     async def _run_while_connected(self):
-        while True:
-            if self._ws is not None:
-                await asyncio.gather(*(task() for task in self._background_tasks))
-            else:
-                print("background tasks stopped")
-                break
+        if not self._background_tasks:
+            self._log.debug("No background tasks, canceling")
+            return
+
+        try:
+            while True:
+                if not self._ws.closed:
+                    await asyncio.gather(*(task() for task in self._background_tasks))
+                else:
+                    break
+        except ConnectionClosedOK:
+            pass
     
     def while_connected(self, buffer=0.05):
         """
@@ -209,29 +215,18 @@ class WPILibWsServer:
             if item[0] in (event.type.value, "message"):
                 for func in item[1]:
                     await func(event)
-
-    def build_app(self) -> web.Application:
+    
+    async def async_run(self, address="0.0.0.0", port=3300):
         """
-        Build a `aiohttp.web.Application`. This can be used to run the server
-        with webserver softwares such as Gunicorn or Uvicorn.
-        `WPILibWsServer.run()` can be used during development to use the
-        aiohttp debug server.
+        Start the WebSocket server
         """
-        if not self._loop:
-            loop = asyncio.get_event_loop()
-        self._loop = loop
-
-        app = web.Application(logger=self._log, loop=loop)
-        app.add_routes([web.get(self._uri, self._ws_handler)])
-
-        return app
+        self._loop = asyncio.get_event_loop()
+        async with serve(self._ws_handler, address, port) as s:
+            print(f"Listening on ws://{address}:{port}")
+            await asyncio.Future()
 
     def run(self, address="0.0.0.0", port=3300):
         """
-        Run the server using the aiohttp debug server.
-        **This is not suggested for production use.** Web servers such as
-        Gunicorn or Uvicorn are suggested for running aiohttp applications in
-        production.
+        Start the WebSocket server. Non-async alias for `async_run`.
         """
-        app = self.build_app()
-        web.run_app(app, host=address, port=port)
+        asyncio.run(self.async_run(address, port))
