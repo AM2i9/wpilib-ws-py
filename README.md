@@ -34,7 +34,7 @@ async def can_motor_handler(event):
 # The while_connected decorator is a loop that runs alongside the server, and
 # can be used for periodic tasks, such as sending battery voltage, like below.
 
-@server.while_connected(buffer=0)
+@server.while_connected()
 async def while_connected():
     await server.send_payload(
         {"type": "RoboRIO", "device": "", "data": {">vin_voltage": 12.0}}
