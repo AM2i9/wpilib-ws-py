@@ -13,7 +13,7 @@ class DeviceType(Enum):
     Encoder = "Encoder"
     Gyro = "Gyro"
     Joystick = "Joystick"
-    PCM = "PCM"
+    PCM = "CTREPCM"
     PWM = "PWM"
     Relay = "Relay"
     Solenoid = "Solenoid"
