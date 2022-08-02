@@ -1,8 +1,7 @@
 import logging
 import asyncio
-
 import json
-from typing import Coroutine, Union
+from typing import Any, Coroutine, Mapping, Union
 
 from websockets import serve
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
@@ -10,37 +9,29 @@ from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 from wpilib_ws import utils
 from wpilib_ws.hardware import DeviceType, CANDeviceType
 
-
-class InvalidDeviceError(Exception):
-    def __init__(self, device: str):
-        self.device = device
-        self.message = f"Device type '{device}' does not exists or cannot be handled."
-        super().__init__(self.message)
-
-
-class MessageEvent:
-
-    type: str
+class Message:
+    type: DeviceType | CANDeviceType
     device: str
-    data: dict
+    data: Mapping[str, Any]
 
-    def __init__(self, type: Union[DeviceType, CANDeviceType], device: str, data: dict):
+    def __init__(self, type, device, data):
         self.type = type
         self.device = device
-        self.payload = data
+        self.data = data 
 
     @classmethod
-    def from_dict(cls, message: dict):
-        device_type = message["type"]
-        try:
-            if device_type.startswith("CAN"):
-                _type = CANDeviceType(device_type)
-            else:
-                _type = DeviceType(device_type)
+    def from_dict(cls, data: dict) -> "Message":
 
-            return cls(_type, message["device"], message["data"])
-        except ValueError:
-            raise InvalidDeviceError(device_type)
+        if data["type"].startswith("CAN"):
+            device_type = CANDeviceType(type)
+        else:
+            device_type = DeviceType(type)
+
+        return cls(
+            device_type,
+            data["device"],
+            data["data"]
+        )
 
 
 class WPILibWsServer:
@@ -111,7 +102,7 @@ class WPILibWsServer:
             await ws.close(reason="Only one connection allowed at a time")
 
         try:
-            if path == "/wpilibws" and not self._connected:
+            if path == self._uri and not self._connected:
                 self._log.info(f"Client connected: {ws.remote_address}")
 
                 self._connected = True
@@ -125,8 +116,9 @@ class WPILibWsServer:
                         self._log.debug(f"Ignoring invalid data: {data}")
                     else:
                         self._log.debug(f"Recieved message data: {data}")
-                        event = MessageEvent.from_dict(data)
-                        await self._handle_message(event)
+                        message = Message.from_dict(data)
+                        await self._handle_message(message)
+
         except ConnectionClosedError as e:
             self._log.info(f"Socket Closed ({e.code}): {e.reason}")
         finally:
@@ -209,7 +201,7 @@ class WPILibWsServer:
 
         self._background_tasks.append(wrapped)
 
-    async def _handle_message(self, event: MessageEvent):
+    async def _handle_message(self, event: Message):
         """
         Handle incoming messages, and call the appropriate handlers.
         """
