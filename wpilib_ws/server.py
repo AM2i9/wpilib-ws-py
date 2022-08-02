@@ -102,10 +102,11 @@ class WPILibWsServer:
         if self._connected:
             await ws.send("HTTP/1.1 409 Conflict\r\n")
             await ws.close(reason="Only one connection allowed at a time")
+            self._log.debug(f"Client attempted to connect but was refused: {ws.remote_address[0]}:{ws.remote_address[1]}")
 
         try:
             if path == self._uri and not self._connected:
-                self._log.info(f"Client connected: {ws.remote_address}")
+                self._log.info(f"Client connected: {ws.remote_address[0]}:{ws.remote_address[1]}")
 
                 self._connected = True
                 self._ws = ws
@@ -137,8 +138,10 @@ class WPILibWsServer:
     async def _send_ws_message(self, message):
         try:
             await self._ws.send(message)
+            if self._verbose_extreme:
+                self._log.debug(f"Sent message: {message}")
         except ConnectionClosedError:
-            self._log.debug("Could not send message because the socket was closed")
+            self._log.debug(f"Could not send message because the socket was closed: {message}")
 
     def _start_background_tasks(self):
         self._loop.create_task(self._run_while_connected())
@@ -220,7 +223,7 @@ class WPILibWsServer:
         """
         self._loop = asyncio.get_event_loop()
         async with serve(self._ws_handler, address, port, ping_interval=None) as s:
-            print(f"Listening on ws://{address}:{port}")
+            print(f"Listening on ws://{address}:{port}{self._uri}")
             await asyncio.Future()
 
     def run(self, address="0.0.0.0", port=3300):
