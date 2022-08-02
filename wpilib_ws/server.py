@@ -1,3 +1,4 @@
+from cgitb import handler
 import logging
 import asyncio
 import json
@@ -9,6 +10,7 @@ from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 from wpilib_ws import utils
 from wpilib_ws.hardware import DeviceType, CANDeviceType
 
+
 class Message:
     type: DeviceType | CANDeviceType
     device: str
@@ -17,7 +19,7 @@ class Message:
     def __init__(self, type, device, data):
         self.type = type
         self.device = device
-        self.data = data 
+        self.data = data
 
     @classmethod
     def from_dict(cls, data: dict) -> "Message":
@@ -27,11 +29,7 @@ class Message:
         else:
             device_type = DeviceType(data["type"])
 
-        return cls(
-            device_type,
-            data["device"],
-            data["data"]
-        )
+        return cls(device_type, data["device"], data["data"])
 
 
 class WPILibWsServer:
@@ -47,7 +45,7 @@ class WPILibWsServer:
         loop=None,
         logger=None,
         verbose=False,
-        verbose_extreme=False
+        verbose_extreme=False,
     ):
         self._uri = uri
         self._connected = False
@@ -102,11 +100,15 @@ class WPILibWsServer:
         if self._connected:
             await ws.send("HTTP/1.1 409 Conflict\r\n")
             await ws.close(reason="Only one connection allowed at a time")
-            self._log.debug(f"Client attempted to connect but was refused: {ws.remote_address[0]}:{ws.remote_address[1]}")
+            self._log.debug(
+                f"Client attempted to connect but was refused: {ws.remote_address[0]}:{ws.remote_address[1]}"
+            )
 
         try:
             if path == self._uri and not self._connected:
-                self._log.info(f"Client connected: {ws.remote_address[0]}:{ws.remote_address[1]}")
+                self._log.info(
+                    f"Client connected: {ws.remote_address[0]}:{ws.remote_address[1]}"
+                )
 
                 self._connected = True
                 self._ws = ws
@@ -141,7 +143,9 @@ class WPILibWsServer:
             if self._verbose_extreme:
                 self._log.debug(f"Sent message: {message}")
         except ConnectionClosedError:
-            self._log.debug(f"Could not send message because the socket was closed: {message}")
+            self._log.debug(
+                f"Could not send message because the socket was closed: {message}"
+            )
 
     def _start_background_tasks(self):
         self._loop.create_task(self._run_while_connected())
@@ -165,6 +169,15 @@ class WPILibWsServer:
         While robot code is connected, run the given coroutine in the
         background. This is best for sending payloads to the server for devices
         such as encoders, gyros, etc.
+
+        Example usage:
+        ```py
+        @server.while_connected()
+        async def while_connected():
+            await server.send_payload(
+                {"type": "RoboRIO", "device": "", "data": {">vin_voltage": 12.0}}
+            )
+        ```
         """
 
         def wrapper(coro):
@@ -173,16 +186,36 @@ class WPILibWsServer:
 
         return wrapper
 
-    def on_message(self, device_type: Union[str, DeviceType, CANDeviceType] = None):
+    def on_message(
+        self,
+        device_type: Union[str, DeviceType, CANDeviceType] = None,
+        device_name: str = "",
+    ):
         """
         Decorator for creating a message handler for all or a specific device
         type coming overthe websocket.
+
+        Example usage:
+        ```py
+        @server.on_message("PWM")
+        async def pwm_handler(message):
+            ...
+        ```
+        ```py
+        @server.on_message("SimDevice", "SPARK MAX")
+        async def spark_max_handler(message):
+            ...
+        ```
         """
         if isinstance(device_type, (DeviceType, CANDeviceType)):
             device_type = device_type.value
 
+        handler_name = device_type
+        if device_name:
+            handler_name += f":{device_name}"
+
         def wrapper(func):
-            event_name = device_type or "message"
+            event_name = handler_name or "message"
             self.add_handler(event_name, func)
             return func
 
@@ -212,8 +245,12 @@ class WPILibWsServer:
         Handle incoming messages, and call the appropriate handlers.
         """
 
+        names = (event.type.value, "message")
+
         for item in self._handlers.items():
-            if item[0] in (event.type.value, "message"):
+            if (
+                ":" in item[0] and event.device.startswith(item[0].split(":")[1])
+            ) or item[0] in names:
                 for func in item[1]:
                     await func(event)
 
