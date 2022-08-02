@@ -23,9 +23,9 @@ class Message:
     def from_dict(cls, data: dict) -> "Message":
 
         if data["type"].startswith("CAN"):
-            device_type = CANDeviceType(type)
+            device_type = CANDeviceType(data["type"])
         else:
-            device_type = DeviceType(type)
+            device_type = DeviceType(data["type"])
 
         return cls(
             device_type,
@@ -46,7 +46,8 @@ class WPILibWsServer:
         uri="/wpilibws",
         loop=None,
         logger=None,
-        debug=False,
+        verbose=False,
+        verbose_extreme=False
     ):
         self._uri = uri
         self._connected = False
@@ -57,8 +58,9 @@ class WPILibWsServer:
         else:
             self._log = logger
 
-        self._debug = debug
-        if self._debug:
+        self._verbose_extreme = verbose_extreme
+        self._verbose = verbose or self._verbose_extreme
+        if self._verbose:
             self._log.setLevel(logging.DEBUG)
 
         self._handlers = {}
@@ -115,7 +117,8 @@ class WPILibWsServer:
                     if not self.verify_data(data):
                         self._log.debug(f"Ignoring invalid data: {data}")
                     else:
-                        self._log.debug(f"Recieved message data: {data}")
+                        if self._verbose_extreme:
+                            self._log.debug(f"Recieved message data: {data}")
                         message = Message.from_dict(data)
                         await self._handle_message(message)
 
